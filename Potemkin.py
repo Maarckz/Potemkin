@@ -1,9 +1,8 @@
+import os
 import socket
 import threading
 import time as t
 
-locks = []
-threads = []
 port_responses = {
         1: "TCPMUX (TCP PORT SERVICE MULTIPLEXER)",
         3: "COMPRESSNET",
@@ -136,8 +135,28 @@ port_responses = {
     }
 
 fake_ports = [1, 3, 7, 9, 13, 17, 19, 20, 21, 22, 23, 24, 25, 26, 33, 37, 42, 43, 49, 70, 79, 80, 81, 82, 83, 84, 85, 88, 89, 90, 99, 100, 106, 109, 110, 111, 113, 119, 123, 125, 135, 137, 138, 139, 143, 144, 146, 161, 163, 179, 194, 199, 211, 212, 222, 256, 259, 264, 280, 301, 308, 311, 340, 366, 389, 406, 407, 416, 417, 425, 427, 443, 444, 445, 458, 464, 465, 481, 497, 500, 512, 513, 514, 515, 517, 518, 520, 525, 530, 531, 532, 533, 540, 543, 544, 546, 547, 548, 549, 554, 556, 563, 587, 591, 593, 631, 636, 639, 646, 647, 648, 652, 653, 654, 665, 666, 674, 691, 692, 695, 698, 993, 995, 1080, 1194, 1433, 1521, 3306]
+locks = []
+threads = []
+ip_count = {}
+bloqueados = set()
+locks_ban = {}
+last_ban_time = {}
+ban_interval = 60 
 
-def handle_client(client_socket, port):
+def ban(ip):
+    global bloqueados, last_ban_time, locks_ban
+    current_time = t.time()
+
+    if ip not in bloqueados and ip_count[ip] > 10:
+        if ip not in last_ban_time or (current_time - last_ban_time[ip]) >= ban_interval:
+            with locks_ban.setdefault(ip, threading.Lock()):
+                if ip not in bloqueados:
+                    print(f"IP {ip} bloqueado")
+                    os.system('touch ban')
+                    bloqueados.add(ip)
+                    last_ban_time[ip] = current_time
+
+def handle_client(client_socket, port, addr):
     try:
         response = port_responses.get(port, f"No custom service for port {port}")
         client_socket.send(response.encode())
@@ -149,6 +168,9 @@ def handle_client(client_socket, port):
         except Exception as e:
             pass
         client_socket.close()
+        with locks[port % len(locks)]:
+            ip_count[addr] = ip_count.get(addr, 0) + 1
+            threading.Thread(target=ban, args=(addr,)).start()
 
 def run_fake_service(port, lock):
     try:
@@ -158,31 +180,33 @@ def run_fake_service(port, lock):
         while True:
             try:
                 client_socket, addr = server_socket.accept()
-                with lock:
-                    threading.Thread(target=handle_client, args=(client_socket, port)).start()
+                threading.Thread(target=handle_client, args=(client_socket, port, addr[0])).start()
             except Exception as e:
                 print(f"Erro ao aceitar conexão: {e}")
     except OSError as e:
         pass
 
-t.sleep(3)
-print(f"Fake Potemkin em execução.")
+if os.geteuid() == 0:
+    t.sleep(2)
+    print("Fake Potemkin em execução.")
 
-try:
-    for port in fake_ports:
-        if not socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(('localhost', port)) == 0:
-            try:
-                lock = threading.Lock()
-                locks.append(lock)
-                thread = threading.Thread(target=run_fake_service, args=(port, lock))
-                threads.append(thread)
-                thread.start()
-            except OSError as e:
-                print(f"Erro ao criar socket: {e}")
-        else:
-            print(f"A porta {port} está em uso e será pulada.")
+    try:
+        for port in fake_ports:
+            if not socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect_ex(('', port)) == 0:
+                try:
+                    lock = threading.Lock()
+                    locks.append(lock)
+                    thread = threading.Thread(target=run_fake_service, args=(port, lock))
+                    threads.append(thread)
+                    thread.start()
+                except OSError as e:
+                    print(f"Erro ao criar socket: {e}")
+            else:
+                print(f"A porta {port} está em uso e será pulada.")
 
-    for thread, lock in zip(threads, locks):
-        thread.join()
-except KeyboardInterrupt:
-    print("\nBye, Bye! ;)")
+        for thread in threads:
+            thread.join()
+    except KeyboardInterrupt:
+        print("\nBye, Bye! ;)")
+else:
+    print("O código NÃO está sendo executado como root.")
