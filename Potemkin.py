@@ -142,7 +142,7 @@ bloqueados = set()
 locks_ban = {}
 last_ban_time = {}
 ban_interval = 60 
-
+funtime = t.strftime("%Y-%m-%d %H:%M:%S", t.localtime())
 def ban(ip):
     global bloqueados, last_ban_time, locks_ban
     current_time = t.time()
@@ -152,9 +152,10 @@ def ban(ip):
             with locks_ban.setdefault(ip, threading.Lock()):
                 if ip not in bloqueados:
                     print(f"IP {ip} bloqueado")
-                    os.system('touch ban')
                     bloqueados.add(ip)
                     last_ban_time[ip] = current_time
+                    with open('Bloqueados', "a") as file:
+                        file.write(f"{ip} - {funtime}\n")
 
 def handle_client(client_socket, port, addr):
     try:
