@@ -13,7 +13,7 @@ port_responses = {
         19: "CHARGEN",
         20: "FTP-DATA (FTP - DADOS)",
         21: "FTP (FTP - CONTROLE)",
-        22: "SSH (SECURE SHELL)",
+        22: "SSH-2.0-OpenSSH_9.3p1 Ubuntu-1ubuntu3.2",
         23: "TELNET",
         24: "PRIV-MAIL",
         25: "SMTP (SIMPLE MAIL TRANSFER PROTOCOL)",
@@ -25,7 +25,22 @@ port_responses = {
         49: "TACACS",
         70: "GOPHER",
         79: "FINGER",
-        80: "HTTP (HYPERTEXT TRANSFER PROTOCOL)",
+        80: f''''HTTP/1.1 400 Bad Request
+Server: Apache/2.4.57 (Ubuntu)
+Content-Length: 330
+Connection: close
+Content-Type: text/html; charset=iso-8859-1
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>400 Bad Request</title>
+</head><body>
+<h1>Bad Request</h1>
+<p>Your browser sent a request that this server could not understand.<br />
+</p>
+<hr>
+<address>Apache/2.4.57 (Ubuntu) Server at Port 80</address>
+</body></html>''',
         81: "HOSTS2-NS",
         82: "XFER",
         83: "MIT-ML-DEV",
@@ -151,7 +166,7 @@ def ban(ip):
         if ip not in last_ban_time or (current_time - last_ban_time[ip]) >= ban_interval:
             with locks_ban.setdefault(ip, threading.Lock()):
                 if ip not in bloqueados:
-                    print(f"IP {ip} bloqueado")
+                    print(f'''sudo firewall-cmd --permanent --add-rich-rule='rule family="ipv4" source address="{ip}" reject"''')
                     bloqueados.add(ip)
                     last_ban_time[ip] = current_time
                     with open('Bloqueados', "a") as file:
