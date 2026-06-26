@@ -105,3 +105,10 @@ Se você for contribuir com o código, execute a suite de testes locais para gar
 ```bash
 python3 test_potemkin.py -v
 ```
+
+## 🧪 Forçando um desbloqueio
+Se precisar desbloquear um ip por "cair na armadilha" voce pode usar o seguinte comando:
+
+```bash
+sudo iptables -D POTEMKIN -s <IP_A_SER_DESBLOQUEADO> -j DROP
+```
