@@ -1,5 +1,5 @@
 <div align="left">
-  <a href="https://github.com/maarckz/Potemkin" target="_blank"><img height="260" width= "960" src="https://github.com/Maarckz/Maarckz/blob/main/Images/Potemkin.png?raw=true"/> 
+  <a href="https://github.com/maarckz/Potemkin" target="_blank"><img height="260" width= "960" src="https://github.com/Maarckz/Maarckz/blob/main/Images/potemkin.png?raw=true"/> 
 </div>
 
 
