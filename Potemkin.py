@@ -1,32 +1,7 @@
 #!/usr/bin/env python3
 """
-Potemkin v3.0 - Sistema Defensivo Honeypot contra Portscan
+Potemkin v3.0.1
 ============================================================
-Arquivo unico, sem dependencias externas.
-
-Uso:
-    python3 potemkin.py           # Executar
-    python3 potemkin.py -c cfg    # Config customizada
-    python3 potemkin.py -h        # Ajuda
-
-Funcionalidades:
-    - 1000+ portas TCP com banners/servicos simulados
-    - Deteccao de portscan (10 portas unicas em 60s)
-    - Bloqueio automatico via iptables (escalonamento: 10min -> 30min -> 1h)
-    - Rate limiting por IP (30 conexoes/10s = bloqueio automatico de 5min)
-    - Unban automatico via timer (removes regra do iptables apos expirar)
-    - Integracao Syslog JSON para Wazuh
-    - Opera sem root via CAP_NET_BIND_SERVICE + sudoers
-    - Arquitetura selectors/epoll (thread unica para 9381 portas)
-
-Seguranca (v3.0):
-    - Backend iptables exclusivo (sem nftables auto-detect)
-    - Validacao rigorosa de IPv4 em todas as entradas
-    - Limite de dados por conexao (anti-amplificacao Echo/Chargen)
-    - Callbacks fora do lock (anti-deadlock em subprocess)
-    - Rate limit com unban automatico
-    - Limite de IPs rastreados (anti-consumo de memoria DoS)
-    - Nenhuma string de usuario e usada em shell/cmd sem sanitizacao
 """
 
 # =========================================================================
@@ -51,7 +26,7 @@ import time                        # Timestamps e timeouts
 from collections import defaultdict  # Dict com valor default factory
 from email.utils import formatdate     # Formatacao de data RFC 2822 para syslog
 
-__VERSION__ = "3.0.0"
+__VERSION__ = "3.0.1"
 
 # --------------------------------------------------------------------------
 # Limite maximo de IPs distintos rastreados simultaneamente.
@@ -110,6 +85,9 @@ DEFAULT_CONFIG = {
         "backend": "iptables",          # Backend fixo: iptables
         "helper": "/usr/local/bin/potemkin-firewall",
     },
+
+    # --- Whitelist ---
+    "whitelist": [],                    # IPs confiaveis que nunca serao monitorados/bloqueados
 
     # --- Logs e PID ---
     "log_file": "/var/log/potemkin/potemkin.log",
@@ -1526,6 +1504,9 @@ class Potemkin:
         # --- Mapa de portas ---
         self.port_map = build_port_map()
 
+        # --- Whitelist (Trusted Hosts) ---
+        self.whitelist = set(self.cfg.get("whitelist", []))
+
         # --- Detector de portscan ---
         det = self.cfg.get("detection", {})
         self.detector = Detector(
@@ -1756,13 +1737,18 @@ class Potemkin:
                     cs, ca = srv.accept()
                     ip = ca[0]
 
-                    # Rejeita rapido: IPs bloqueados
-                    if self.detector.is_blocked(ip):
+                    # Rejeita rapido: IPv6 (nao suportado pelo iptables nativo)
+                    if ':' in ip:
                         cs.close()
                         continue
 
-                    # Rejeita rapido: IPv6 (nao suportado pelo iptables nativo)
-                    if ':' in ip:
+                    # Trusted Hosts (Whitelist)
+                    if ip in self.whitelist:
+                        cs.close()
+                        continue
+
+                    # Rejeita rapido: IPs bloqueados
+                    if self.detector.is_blocked(ip):
                         cs.close()
                         continue
 
