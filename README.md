@@ -9,7 +9,7 @@ Potemkin é um serviço de **Defesa Ativa (Active Defense)** focado em proteger 
 
 Ele escuta em milhares de portas não utilizadas do seu servidor. Quando um atacante, script automatizado ou malware inicia um *portscan* para tentar descobrir onde estão os seus serviços reais (ex: uma porta SSH alterada, um painel administrativo oculto, bancos de dados), o Potemkin detecta a varredura instantaneamente e **bloqueia o atacante diretamente no firewall (`iptables`)** antes que ele consiga encontrar ou explorar seus serviços legítimos.
 
-## 🛡️ Como Funciona?
+## Como Funciona?
 
 1. **A Armadilha:** O Potemkin faz o bind em todas as portas não utilizadas do servidor simulando serviços (Tarpit). Suas portas reais (ex: 80, 443) são automaticamente puladas e continuam funcionando normalmente.
 2. **Detecção por Janela Deslizante:** O tráfego é analisado em tempo real. Se um IP tocar em um número *X* de portas únicas dentro de *Y* segundos, ele é classificado como scanner.
@@ -17,7 +17,7 @@ Ele escuta em milhares de portas não utilizadas do seu servidor. Quando um atac
 4. **Escalonamento de Punição:** Infratores reincidentes recebem bloqueios progressivamente maiores (10 min -> 30 min -> 1 hora).
 5. **Desbloqueio Automático:** Os bloqueios possuem tempo de vida e são removidos automaticamente para evitar travamentos acidentais permanentes.
 
-## ✨ Principais Funcionalidades
+## Principais Funcionalidades
 
 * **Arquitetura Segura (Least Privilege):** O daemon principal roda sob um usuário sem privilégios. A manipulação do firewall é feita através de um script *helper* isolado, protegido com `chattr +i` e validado via `sudo` sem senha apenas para ações estritas.
 * **Alta Performance:** Utiliza I/O multiplexing (`epoll`) em uma única thread. Consegue escutar em +65.000 portas consumindo pouquíssima CPU e Memória.
@@ -28,7 +28,7 @@ Ele escuta em milhares de portas não utilizadas do seu servidor. Quando um atac
   * Limite de bytes em *Echo/Chargen* para evitar amplificação (DDoS Reflection).
 * **Engano Ativo (Tarpit):** Simula banners reais de serviços (SSH, Apache, MySQL, etc.) para atrasar ferramentas automatizadas como o Nmap.
 
-## 📦 Instalação (Via Pacote Debian)
+## Instalação (Via Pacote Debian)
 
 A forma recomendada e mais limpa de gerenciar o ciclo de vida do Potemkin no seu host é gerando o pacote `.deb`.
 
@@ -49,7 +49,7 @@ A instalação do pacote garante que o sistema implemente as seguintes diretrize
 * **Imutabilidade anti-tampering:** O pacote aplica `chattr +i` no script do firewall e no arquivo sudoers. Se um invasor explorar uma vulnerabilidade no Python, ele não conseguirá alterar a lógica do firewall para executar comandos maliciosos como root.
 * **Gerenciamento Resiliente:** Integração perfeita com `systemd` e `rsyslog`.
 
-### 🛠️ Como Compilar / Criar nova versão
+### Como Compilar / Criar nova versão
 
 Se você fizer alterações no código fonte (ex: no `potemkin.py` ou `potemkin-firewall`) e quiser gerar uma atualização do pacote `.deb`:
 
@@ -64,7 +64,7 @@ bash build_deb.sh
 sudo apt install ./build_deb/potemkin_3.0.1-1_all.deb
 ```
 
-## ⚙️ Configuração
+## Configuração
 
 O arquivo principal fica em `/etc/potemkin/potemkin.conf`.
 Você pode ajustar o nível de sensibilidade e o tempo de bloqueio:
@@ -81,7 +81,7 @@ Você pode ajustar o nível de sensibilidade e o tempo de bloqueio:
 ```
 *Reinicie o serviço após qualquer alteração: `sudo systemctl restart potemkin`*
 
-## 🧩 Integração com Wazuh
+## Integração com Wazuh
 
 Se você utiliza o **Wazuh** na sua infraestrutura, o Potemkin já vem com Decoders e Rules prontos para gerar alertas MITRE ATT&CK.
 
@@ -90,7 +90,7 @@ Copie os arquivos fornecidos para o seu **Wazuh Manager**:
 2. Copie o `wazuh_rules.xml` para `/var/ossec/etc/rules/potemkin_rules.xml`
 3. Reinicie o Manager: `systemctl restart wazuh-manager`
 
-## 🧹 Desinstalação
+## Desinstalação
 
 Como a instalação foi feita via `.deb`, a desinstalação é totalmente rastreável e limpa. O próprio pacote se encarrega de desfazer o *hardening* (imutabilidade) e remover as regras do iptables.
 
@@ -98,7 +98,7 @@ Como a instalação foi feita via `.deb`, a desinstalação é totalmente rastre
 sudo apt remove potemkin
 ```
 
-## 🧪 Testes de Desenvolvimento
+## Testes de Desenvolvimento
 
 Se você for contribuir com o código, execute a suite de testes locais para garantir que a lógica de detecção e os mecanismos de segurança (anti-DoS, validação de IP) continuam funcionando:
 
@@ -106,7 +106,7 @@ Se você for contribuir com o código, execute a suite de testes locais para gar
 python3 test_potemkin.py -v
 ```
 
-## 🧪 Forçando um desbloqueio
+## Forçando um desbloqueio
 Se precisar desbloquear um ip por "cair na armadilha" voce pode usar o seguinte comando:
 
 ```bash
