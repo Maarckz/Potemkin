@@ -1,0 +1,177 @@
+#!/bin/bash
+# =============================================================================
+# potemkin-firewall - Helper privilegiado para operacoes iptables
+# =============================================================================
+#
+# SEGURANCA:
+#   - Validacao rigorosa de IP (formato IPv4 com octetos 0-255)
+#   - Validacao de duracao (numero inteiro positivo, max 86400)
+#   - Validacao de backend (APENAS "iptables" permitido)
+#   - Validacao de chain name (apenas alfanumericos + underscore)
+#   - Chain HARDCODED como "POTEMKIN" em block/unblock (ignora argumento)
+#   - Nenhum comando arbitrario e executado
+#   - Set -euo pipefail para falhar em qualquer erro
+#
+# USO: Chamado via sudo -n pelo processo potemkin (usuario 'potemkin')
+#   sudo -n /usr/local/bin/potemkin-firewall setup iptables POTEMKIN
+#   sudo -n /usr/local/bin/potemkin-firewall block iptables 1.2.3.4 600
+#   sudo -n /usr/local/bin/potemkin-firewall unblock iptables 1.2.3.4
+#   sudo -n /usr/local/bin/potemkin-firewall cleanup iptables POTEMKIN
+# =============================================================================
+
+set -euo pipefail
+
+# --- Validacao de entrada ---
+# Cada funcao valida um tipo de argumento e sai com erro se invalido.
+# Isso previne injection de comandos via argumentos maliciosos.
+
+validate_ip() {
+    local ip="$1"
+    # Regex basica: 4 grupos de 1-3 digitos separados por ponto
+    if [[ ! "$ip" =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        echo "ERROR: IP invalido: $ip" >&2
+        exit 1
+    fi
+    # Verifica cada octeto esta no range 0-255
+    local IFS='.'
+    read -ra octets <<< "$ip"
+    for octet in "${octets[@]}"; do
+        if [[ "$octet" -lt 0 || "$octet" -gt 255 ]]; then
+            echo "ERROR: Octeto IP invalido: $octet" >&2
+            exit 1
+        fi
+    done
+}
+
+validate_duration() {
+    local dur="$1"
+    # Duracao: inteiro positivo, maximo 1 dia (86400s)
+    if [[ ! "$dur" =~ ^[0-9]+$ ]] || [[ "$dur" -lt 1 ]] || [[ "$dur" -gt 86400 ]]; then
+        echo "ERROR: Duracao invalida (1-86400): $dur" >&2
+        exit 1
+    fi
+}
+
+validate_backend() {
+    local backend="$1"
+    # v3.0: APENAS iptables e permitido
+    if [[ "$backend" != "iptables" ]]; then
+        echo "ERROR: Backend invalido (apenas iptables): $backend" >&2
+        exit 1
+    fi
+}
+
+validate_chain() {
+    local chain="$1"
+    # Chain: apenas alfanumericos, underscore e hifen
+    if [[ ! "$chain" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        echo "ERROR: Nome de chain invalido: $chain" >&2
+        exit 1
+    fi
+}
+
+# =========================================================================
+# OPERACOES IPTABLES
+# =========================================================================
+#
+# Cada funcao implementa uma operacao especifica no iptables.
+# A chain POTEMKIN e usada como cadeia dedicada para regras do honeypot.
+# =========================================================================
+
+iptables_setup() {
+    local chain="$1"
+    # Cria chain (ignora se ja existe), flush para idempotencia,
+    # adiciona regra RETURN como default, e jump da chain INPUT.
+    iptables -N "$chain" 2>/dev/null || true
+    # Flush: remove regras existentes (idempotencia em restart)
+    iptables -F "$chain" 2>/dev/null || true
+    # Regra default: RETURN (volta para INPUT sem bloquear)
+    iptables -A "$chain" -j RETURN 2>/dev/null || true
+    # Jump da chain INPUT para POTEMKIN (se ja existir, ignora)
+    if ! iptables -C INPUT -j "$chain" 2>/dev/null; then
+        iptables -I INPUT -j "$chain"
+    fi
+}
+
+iptables_block() {
+    local ip="$1"
+    local duration="$2"
+    # Chain e HARDCODED como POTEMKIN (ignora argumento para seguranca)
+    local chain="POTEMKIN"
+    local timestamp
+    timestamp=$(date +%s)
+    # Comment contem timestamp:unix:duration para debugging
+    local comment="PTM:${timestamp}:${duration}"
+
+    # Verifica se ja existe regra para este IP (evita duplicatas)
+    # Primeiro checa com comment exato
+    if iptables -C "$chain" -s "$ip" -m comment --comment "$comment" -j DROP 2>/dev/null; then
+        return 0
+    fi
+    # Depois checa qualquer regra DROP para este IP
+    if iptables -C "$chain" -s "$ip" -j DROP 2>/dev/null; then
+        return 0
+    fi
+
+    # Insere regra no inicio da chain (-I) para eficiencia
+    iptables -I "$chain" -s "$ip" -m comment --comment "$comment" -j DROP
+}
+
+iptables_unblock() {
+    local ip="$1"
+    # Chain HARDCODED
+    local chain="POTEMKIN"
+    local rule_num
+    # Busca regra pelo IP (coluna 5 do iptables -L -n --line-numbers)
+    rule_num=$(iptables -L "$chain" -n --line-numbers 2>/dev/null | awk -v ip="$ip" '$5 == ip {print $1; exit}') || true
+    if [[ -n "$rule_num" ]]; then
+        iptables -D "$chain" "$rule_num" 2>/dev/null || true
+    fi
+}
+
+iptables_cleanup() {
+    local chain="$1"
+    # Remove jump da INPUT, flush e deleta chain
+    iptables -D INPUT -j "$chain" 2>/dev/null || true
+    iptables -F "$chain" 2>/dev/null || true
+    iptables -X "$chain" 2>/dev/null || true
+}
+
+# =========================================================================
+# MAIN - Parser de argumentos e dispatch
+# =========================================================================
+
+COMMAND="${1:-}"
+BACKEND="${2:-}"
+TARGET="${3:-}"
+EXTRA="${4:-}"
+
+case "$COMMAND" in
+    setup)
+        validate_backend "$BACKEND"
+        validate_chain "$TARGET"
+        iptables_setup "$TARGET"
+        ;;
+    block)
+        validate_backend "$BACKEND"
+        validate_ip "$TARGET"
+        validate_duration "$EXTRA"
+        iptables_block "$TARGET" "$EXTRA"
+        ;;
+    unblock)
+        validate_backend "$BACKEND"
+        validate_ip "$TARGET"
+        iptables_unblock "$TARGET"
+        ;;
+    cleanup)
+        validate_backend "$BACKEND"
+        validate_chain "$TARGET"
+        iptables_cleanup "$TARGET"
+        ;;
+    *)
+        echo "Uso: potemkin-firewall {setup|block|unblock|cleanup} iptables <chain|ip> [duration]" >&2
+        exit 1
+        ;;
+esac
+
+exit 0

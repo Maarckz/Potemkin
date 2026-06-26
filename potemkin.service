@@ -1,0 +1,77 @@
+# =============================================================================
+# Potemkin Honeypot - systemd Service Unit
+# =============================================================================
+# Instalar em: /etc/systemd/system/potemkin.service
+#
+# COMANDOS:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable potemkin
+#   sudo systemctl start potemkin
+#   sudo systemctl stop potemkin
+#   sudo systemctl status potemkin
+#   sudo journalctl -u potemkin -f
+#
+# SEGURANCA:
+#   - NoNewPrivileges NAO usado (necessario para sudo do firewall helper)
+#   - ProtectSystem=strict impede escrita no filesystem
+#   - ProtectKernelTunables/Modules/ControlGroups = hardened
+#   - Sudoers restringe comando a helper especifico com args validados
+# =============================================================================
+
+[Unit]
+Description=Potemkin Portscan Honeypot Defense System
+Documentation=https://github.com/Maarckz/Potemkin
+After=network.target network-online.target syslog.service
+Wants=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=potemkin
+Group=potemkin
+
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+WorkingDirectory=/opt/potemkin
+ExecStart=/usr/bin/python3 /opt/potemkin/potemkin.py -c /etc/potemkin/potemkin.conf
+
+Restart=on-failure
+RestartSec=10
+
+# --- Hardening ---
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+PrivateMounts=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RemoveIPC=true
+
+# --- Limites de recursos ---
+LimitNOFILE=131072
+LimitNPROC=8192
+TasksMax=8192
+MemoryMax=512M
+CPUQuota=50%
+
+# --- Timeout ---
+TimeoutStopSec=30
+TimeoutStartSec=120
+
+# --- Logs ---
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=potemkin
+SyslogFacility=local6
+
+# --- Diretorios com permissao de escrita ---
+ReadWritePaths=/var/log/potemkin /var/run/potemkin
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,22 @@
+<!-- 
+  Wazuh Decoder para Potemkin Honeypot
+  Instale no Manager em: /var/ossec/etc/decoders/potemkin_decoder.xml 
+-->
+<decoder name="potemkin">
+  <!-- Aceita tanto quando o syslog envia com a tag python3 quanto potemkin -->
+  <program_name>^python3$|^potemkin$</program_name>
+  <prematch>potemkin: \{</prematch>
+</decoder>
+
+<!-- O JSON_Decoder do Wazuh extrai dinamicamente todas as chaves do JSON -->
+<decoder name="potemkin-json">
+  <parent>potemkin</parent>
+  <plugin_decoder>JSON_Decoder</plugin_decoder>
+</decoder>
+
+<!-- Extração duplicada para garantir a flag nativa 'srcip', útil se você for usar o Active Response do próprio Wazuh futuramente -->
+<decoder name="potemkin-srcip">
+  <parent>potemkin</parent>
+  <regex>"src_ip":"(\S+?)"</regex>
+  <order>srcip</order>
+</decoder>

@@ -1,0 +1,22 @@
+# =============================================================================
+# Potemkin Honeypot - Sudoers Configuration
+# =============================================================================
+# Instalar em: /etc/sudoers.d/potemkin
+# Permissao:   0440 (root:root)
+#
+# PRINCIPIO DO MENOR PRIVILEGIO:
+#   - SOMENTE operacoes especificas do helper sao permitidas
+#   - Nenhum acesso direto a iptables/nft
+#   - Chain name HARDCODED no helper (ignora argumento chain do Python)
+#   - Comandos com wildcard (*) restritos ao IP (validado pelo helper)
+# =============================================================================
+
+potemkin ALL=(root) NOPASSWD: \
+    /usr/local/bin/potemkin-firewall setup nftables POTEMKIN, \
+    /usr/local/bin/potemkin-firewall setup iptables POTEMKIN, \
+    /usr/local/bin/potemkin-firewall block nftables *, \
+    /usr/local/bin/potemkin-firewall block iptables *, \
+    /usr/local/bin/potemkin-firewall unblock nftables *, \
+    /usr/local/bin/potemkin-firewall unblock iptables *, \
+    /usr/local/bin/potemkin-firewall cleanup nftables POTEMKIN, \
+    /usr/local/bin/potemkin-firewall cleanup iptables POTEMKIN
