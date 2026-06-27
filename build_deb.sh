@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-VERSION="3.0.0"
+VERSION="3.0.1"
 PKG_NAME="potemkin"
 ARCH="all"
 DEB_DIR="build_deb/${PKG_NAME}_${VERSION}-1_${ARCH}"
@@ -36,12 +36,12 @@ chmod 440 "${DEB_DIR}/etc/sudoers.d/potemkin"
 echo "Criando DEBIAN/control..."
 cat << 'EOF' > "${DEB_DIR}/DEBIAN/control"
 Package: potemkin
-Version: 3.0.0-1
+Version: 3.0.1
 Section: net
 Priority: optional
 Architecture: all
 Depends: python3, sudo, iptables, e2fsprogs, gawk
-Maintainer: Maarckz <maarckz@localhost>
+Maintainer: Maarckz <[EMAIL_ADDRESS]>
 Description: Potemkin Honeypot
  Potemkin e um Honeypot portscan detector com banimento automatico
  usando iptables. Arquitetura de threads e sockets paralelos.

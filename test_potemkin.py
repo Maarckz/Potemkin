@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-"""
-Suite de testes para Potemkin v3.0
-===================================
-Testa todos os componentes criticos sem precisar de root/sudo/iptables.
-Mocka o firewall e syslog para testar a logica de negocio.
-
-Execucao:
-    python3 test_potemkin.py
-    python3 test_potemkin.py -v  # verbose
-"""
 
 import sys
 import os

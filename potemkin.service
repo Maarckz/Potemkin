@@ -11,11 +11,6 @@
 #   sudo systemctl status potemkin
 #   sudo journalctl -u potemkin -f
 #
-# SEGURANCA:
-#   - NoNewPrivileges NAO usado (necessario para sudo do firewall helper)
-#   - ProtectSystem=strict impede escrita no filesystem
-#   - ProtectKernelTunables/Modules/ControlGroups = hardened
-#   - Sudoers restringe comando a helper especifico com args validados
 # =============================================================================
 
 [Unit]

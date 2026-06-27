@@ -3,12 +3,6 @@
 # =============================================================================
 # Instalar em: /etc/sudoers.d/potemkin
 # Permissao:   0440 (root:root)
-#
-# PRINCIPIO DO MENOR PRIVILEGIO:
-#   - SOMENTE operacoes especificas do helper sao permitidas
-#   - Nenhum acesso direto a iptables/nft
-#   - Chain name HARDCODED no helper (ignora argumento chain do Python)
-#   - Comandos com wildcard (*) restritos ao IP (validado pelo helper)
 # =============================================================================
 
 potemkin ALL=(root) NOPASSWD: \

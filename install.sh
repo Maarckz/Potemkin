@@ -1,12 +1,4 @@
 #!/bin/bash
-# =============================================================================
-# Potemkin v2.1.1 - Script de Instalacao Limpia (remove versao anterior)
-# =============================================================================
-# Uso: sudo bash install.sh
-#
-# Este script REMOVE completamente a versao anterior antes de instalar.
-# Nenhuma configuracao anterior e preservada.
-# =============================================================================
 
 set -euo pipefail
 
@@ -272,7 +264,7 @@ echo ""
 
 echo ""
 echo "======================================================="
-echo -e "${GREEN}Potemkin v2.1.1 instalado com sucesso!${NC}"
+echo -e "${GREEN}Potemkin v3.0.1 instalado com sucesso!${NC}"
 echo "======================================================="
 echo ""
 echo "  Instalacao:  ${INSTALL_DIR}"
