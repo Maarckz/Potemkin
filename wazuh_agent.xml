@@ -1,9 +1,0 @@
-<!-- 
-  Configuração do Wazuh Agent
-  Adicione este bloco no arquivo /var/ossec/etc/ossec.conf da máquina 
-  onde o Potemkin está rodando, dentro da sessão <ossec_config>
--->
-<localfile>
-  <log_format>syslog</log_format>
-  <location>/var/log/potemkin/syslog</location>
-</localfile>
