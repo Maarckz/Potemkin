@@ -1,0 +1,21 @@
+<!--
+  Wazuh Decoder para Potemkin Honeypot v3.0
+  Decoders standalone com PCRE2
+-->
+<decoder name="potemkin-scan">
+  <prematch type="pcre2">\[WARNING\] PORTSCAN</prematch>
+  <regex type="pcre2">PORTSCAN\s+(\S+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="potemkin-rate">
+  <prematch type="pcre2">\[WARNING\] RATE_LIMIT</prematch>
+  <regex type="pcre2">RATE_LIMIT\s+(\S+)</regex>
+  <order>srcip</order>
+</decoder>
+
+<decoder name="potemkin-unban">
+  <prematch type="pcre2">\[INFO\] UNBAN</prematch>
+  <regex type="pcre2">UNBAN\s+(\S+)</regex>
+  <order>srcip</order>
+</decoder>

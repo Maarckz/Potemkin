@@ -1,0 +1,59 @@
+wazuh@defense:~$ sudo cat /var/ossec/etc/rules/0100-potemkin_rules.xml
+<!--
+  Wazuh Rules para Potemkin Honeypot v3.0
+  =========================================
+  Instalar em: /var/ossec/etc/rules/potemkin_rules.xml
+
+  Apos instalar, reiniciar o Wazuh:
+    sudo systemctl restart wazuh-manager
+-->
+
+<group name="potemkin,honeypot,attacks,recon,firewall">
+
+  <!--
+    PortScan Detectado (Nivel 8)
+  -->
+  <rule id="100002" level="8">
+    <decoded_as>potemkin-scan</decoded_as>
+    <description>POTEMKIN: PortScan Detectado - IP Atacante: $(srcip) - Bloqueado por $(ban_time)s</description>
+    <group>portscan,attacks,recon,ids</group>
+  </rule>
+
+  <!--
+    Rate Limit Excedido (Nivel 7)
+  -->
+  <rule id="100010" level="7">
+    <decoded_as>potemkin-rate</decoded_as>
+    <description>POTEMKIN: Rate Limit Excedido - IP Atacante: $(srcip) - Bloqueado por $(ban_time)s</description>
+    <group>rate_limit,attacks,firewall,ids</group>
+  </rule>
+
+  <!--
+    IP Desbloqueado (Nivel 3)
+  -->
+  <rule id="100011" level="3">
+    <decoded_as>potemkin-unban</decoded_as>
+    <description>POTEMKIN: IP Desbloqueado: $(srcip)</description>
+    <group>potemkin,firewall,ids</group>
+  </rule>
+
+  <!--
+    Atacante Recorrente: 3+ portscans do mesmo IP em 5 minutos => nivel 10
+  -->
+  <rule id="100020" level="10" frequency="3" timeframe="300">
+    <if_matched_sid>100002</if_matched_sid>
+    <description>POTEMKIN: Atacante Recorrente: $(srcip) - 3+ portscans em 5 minutos</description>
+    <group>portscan,attacks,recon,ids,correlation</group>
+  </rule>
+
+  <!--
+    Rate Limit Recorrente: 5+ excedentes do mesmo IP em 5 min => nivel 10
+  -->
+  <rule id="100021" level="10" frequency="5" timeframe="300">
+    <if_matched_sid>100010</if_matched_sid>
+    <description>POTEMKIN: Rate Limit Recorrente: $(srcip) - 5+ excedentes em 5 minutos</description>
+    <group>rate_limit,attacks,firewall,ids,correlation</group>
+  </rule>
+
+</group>
+
