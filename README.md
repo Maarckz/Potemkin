@@ -3,7 +3,7 @@
 </div>
 
 
-# Potemkin - Active Defense & Portscan Blocker
+# Potemkin - Portscan Blocker
 
 Potemkin é um serviço de **Defesa Ativa (Active Defense)** focado em proteger servidores de produção que rodam aplicações sensíveis. Em vez de ser usado puramente como honeypot para coleta de inteligência, o Potemkin age como um "campo minado" ao redor das suas aplicações reais.
 
