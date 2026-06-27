@@ -61,7 +61,7 @@ bash build_deb.sh
 ```
 4. Um novo arquivo `.deb` será gerado. Instale-o por cima da versão antiga para atualizar automaticamente o servidor:
 ```bash
-sudo apt install ./build_deb/potemkin_3.0.1-1_all.deb
+sudo apt install ./build_deb/potemkin_3.0.1_all.deb
 ```
 
 ## Configuração
