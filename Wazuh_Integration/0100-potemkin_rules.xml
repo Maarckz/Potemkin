@@ -1,4 +1,3 @@
-wazuh@defense:~$ sudo cat /var/ossec/etc/rules/0100-potemkin_rules.xml
 <!--
   Wazuh Rules para Potemkin Honeypot v3.0
   =========================================
