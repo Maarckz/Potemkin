@@ -371,17 +371,18 @@ class RateLimiter:
 
             if len(self.buckets[ip]) >= self.max_conn:
                 if self.ban_on_exceed:
-                    self.buckets[ip].clear()  # Zera contagem apos trigger
-                return False
+                    del self.buckets[ip] # EM VEZ DE self.buckets[ip].clear()
+                return False            
+
+            #if len(self.buckets[ip]) >= self.max_conn:
+            #    if self.ban_on_exceed:
+            #        self.buckets[ip].clear()  # Zera contagem apos trigger
+            #    return False
 
             self.buckets[ip].append(now)
             return True
 
     def cleanup_loop(self, interval=30):
-        """
-        Thread de background: remove buckets vazios periodicamente.
-        Previne consumo de memoria com muitos IPs inativos.
-        """
         while True:
             time.sleep(interval)
             now = time.time()
@@ -390,7 +391,22 @@ class RateLimiter:
                 for ip in list(self.buckets):
                     self.buckets[ip] = [t for t in self.buckets[ip] if t > cutoff]
                     if not self.buckets[ip]:
-                        del self.buckets[ip]
+                        del self.buckets[ip]  # ESTA LINHA JÁ ESTÁ CERTA NO SEU CÓDIGO
+
+     #def cleanup_loop(self, interval=30):
+     #   """
+     #   Thread de background: remove buckets vazios periodicamente.
+     #   Previne consumo de memoria com muitos IPs inativos.
+     #   """
+     #   while True:
+     #       time.sleep(interval)
+     #       now = time.time()
+     #       with self.lock:
+     #           cutoff = now - self.window
+     #           for ip in list(self.buckets):
+     #               self.buckets[ip] = [t for t in self.buckets[ip] if t > cutoff]
+     #               if not self.buckets[ip]:
+     #                   del self.buckets[ip]
 
 
 # =========================================================================
