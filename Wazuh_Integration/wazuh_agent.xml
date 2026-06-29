@@ -5,5 +5,5 @@
 -->
 <localfile>
   <log_format>syslog</log_format>
-  <location>/var/log/potemkin/syslog</location>
+  <location>/var/log/potemkin/potemkin.log</location>
 </localfile>
